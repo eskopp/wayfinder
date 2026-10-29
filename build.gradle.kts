@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "io.github.eskopp"
-version = "0.1.0"
+version = (findProperty("releaseVersion") as String?) ?: "0.1.0"
 
 repositories {
     mavenCentral()
