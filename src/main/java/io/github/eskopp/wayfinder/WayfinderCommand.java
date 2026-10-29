@@ -81,6 +81,12 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
             error(player, "No waypoint named '" + name + "'.");
             return;
         }
+        if (!plugin.getConfig().getBoolean("teleport-enabled", true)) {
+            info(player, "'" + name + "' is at " + target.getWorld().getName() + " "
+                    + target.getBlockX() + " " + target.getBlockY() + " " + target.getBlockZ()
+                    + " (teleporting is disabled on this server).");
+            return;
+        }
         player.teleportAsync(target).thenAccept(ok -> {
             if (ok) {
                 info(player, "Teleported to '" + name + "'.");

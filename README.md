@@ -30,7 +30,10 @@ The plugin registers only `/wayfinder` and no aliases, so it does not shadow com
 
 ```yaml
 max-waypoints: 10
+teleport-enabled: true
 ```
+
+With `teleport-enabled: false`, `/wayfinder tp <name>` only prints the coordinates of the waypoint and does not teleport the player. Changes to the configuration take effect after a server restart.
 
 Waypoints are saved in `plugins/Wayfinder/waypoints.yml`.
 
