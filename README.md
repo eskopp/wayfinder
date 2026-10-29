@@ -13,6 +13,7 @@ A small Paper plugin for Minecraft 26.3. Players save personal waypoints and tel
 | `/wf tpa <player>` | Ask to teleport to another online player |
 | `/wf accept` | Accept the pending request, the sender is teleported to you |
 | `/wf deny` | Deny the pending request |
+| `/wf help` | Show the commands you are allowed to use (also shown by `/wf` without arguments) |
 
 Names may contain `a-z`, `0-9`, `_` and `-` (up to 32 characters). Waypoints are stored per player and work across dimensions.
 

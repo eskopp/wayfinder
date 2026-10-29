@@ -10,7 +10,7 @@ commands:
   wf:
     description: Manage your personal waypoints
     aliases: [wayfinder]
-    usage: /wf <set|tp|list|delete|tpa|accept|deny> [name|player]
+    usage: /wf <set|tp|list|delete|tpa|accept|deny|help> [name|player]
     permission: wayfinder.use
 
 permissions:

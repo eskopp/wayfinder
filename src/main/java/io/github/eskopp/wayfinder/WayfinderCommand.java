@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 public final class WayfinderCommand implements CommandExecutor, TabCompleter {
 
     private static final Pattern VALID_NAME = Pattern.compile("[a-z0-9_-]{1,32}");
-    private static final List<String> SUBCOMMANDS = List.of("set", "tp", "list", "delete", "tpa", "accept", "deny");
+    private static final List<String> SUBCOMMANDS = List.of("set", "tp", "list", "delete", "tpa", "accept", "deny", "help");
 
     private final WayfinderPlugin plugin;
     private final WaypointStore store;
@@ -38,7 +38,8 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (args.length == 0) {
-            return false;
+            handleHelp(player);
+            return true;
         }
         String sub = args[0].toLowerCase(Locale.ROOT);
         switch (sub) {
@@ -49,8 +50,9 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
             case "tpa" -> handleTpa(player, args);
             case "accept" -> handleAccept(player);
             case "deny" -> handleDeny(player);
+            case "help" -> handleHelp(player);
             default -> {
-                return false;
+                handleHelp(player);
             }
         }
         return true;
@@ -204,6 +206,29 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
         if (requester != null) {
             error(requester, player.getName() + " denied your teleport request.");
         }
+    }
+
+    private void handleHelp(Player player) {
+        player.sendMessage(Component.text("Wayfinder commands:", NamedTextColor.GOLD));
+        helpLine(player, "wayfinder.set", "/wf set <name>", "Save your current position");
+        helpLine(player, "wayfinder.tp", "/wf tp <name>", "Teleport to a waypoint");
+        helpLine(player, "wayfinder.use", "/wf list", "List your waypoints");
+        helpLine(player, "wayfinder.delete", "/wf delete <name>", "Delete a waypoint");
+        if (plugin.getConfig().getBoolean("tpa-enabled", true)) {
+            helpLine(player, "wayfinder.tpa", "/wf tpa <player>", "Ask to teleport to a player");
+            helpLine(player, "wayfinder.tpa.accept", "/wf accept", "Accept a teleport request");
+            helpLine(player, "wayfinder.tpa.accept", "/wf deny", "Deny a teleport request");
+        }
+        helpLine(player, "wayfinder.use", "/wf help", "Show this help");
+    }
+
+    private void helpLine(Player player, String permission, String usage, String description) {
+        if (!player.hasPermission(permission)) {
+            return;
+        }
+        player.sendMessage(Component.text(usage, NamedTextColor.YELLOW)
+                .clickEvent(ClickEvent.suggestCommand(usage.split(" <")[0]))
+                .append(Component.text(" - " + description, NamedTextColor.GRAY)));
     }
 
     private String requireName(Player player, String[] args) {
