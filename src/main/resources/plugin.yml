@@ -7,14 +7,15 @@ description: Personal waypoints with teleportation
 website: https://github.com/eskopp/wayfinder
 
 commands:
-  wayfinder:
+  wf:
     description: Manage your personal waypoints
-    usage: /wayfinder <set|tp|list|delete> [name]
+    aliases: [wayfinder]
+    usage: /wf <set|tp|list|delete> [name]
     permission: wayfinder.use
 
 permissions:
   wayfinder.use:
-    description: Use the /wayfinder command
+    description: Use the /wf command
     default: true
   wayfinder.set:
     description: Create waypoints

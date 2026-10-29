@@ -99,7 +99,7 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
     private void handleList(Player player) {
         var names = store.names(player.getUniqueId());
         if (names.isEmpty()) {
-            info(player, "You have no waypoints. Use /wayfinder set <name>.");
+            info(player, "You have no waypoints. Use /wf set <name>.");
             return;
         }
         info(player, "Your waypoints (" + names.size() + "):");
@@ -129,7 +129,7 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
 
     private String requireName(Player player, String[] args) {
         if (args.length < 2) {
-            error(player, "Usage: /wayfinder " + args[0].toLowerCase(Locale.ROOT) + " <name>");
+            error(player, "Usage: /wf " + args[0].toLowerCase(Locale.ROOT) + " <name>");
             return null;
         }
         String name = args[1].toLowerCase(Locale.ROOT);

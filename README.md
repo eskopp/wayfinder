@@ -6,14 +6,14 @@ A small Paper plugin for Minecraft 26.3. Players save personal waypoints and tel
 
 | Command | Description |
 |---|---|
-| `/wayfinder set <name>` | Save your current position as a waypoint |
-| `/wayfinder tp <name>` | Teleport to one of your waypoints |
-| `/wayfinder list` | List your waypoints |
-| `/wayfinder delete <name>` | Delete a waypoint |
+| `/wf set <name>` | Save your current position as a waypoint |
+| `/wf tp <name>` | Teleport to one of your waypoints |
+| `/wf list` | List your waypoints |
+| `/wf delete <name>` | Delete a waypoint |
 
 Names may contain `a-z`, `0-9`, `_` and `-` (up to 32 characters). Waypoints are stored per player and work across dimensions.
 
-The plugin registers only `/wayfinder` and no aliases, so it does not shadow commands such as `/home`, `/warp`, `/tpa` or the vanilla `/waypoint`. Paper also exposes it as `/wayfinder:wayfinder`.
+The command is `/wf`, with `/wayfinder` as a longer alias. The plugin registers no other names, so it does not shadow commands such as `/home`, `/warp`, `/tpa` or the vanilla `/waypoint`. Paper also exposes the prefixed form `/wayfinder:wf`, which keeps working if another plugin already uses `/wf` or `/wayfinder`.
 
 ## Permissions
 
@@ -33,7 +33,7 @@ max-waypoints: 10
 teleport-enabled: true
 ```
 
-With `teleport-enabled: false`, `/wayfinder tp <name>` only prints the coordinates of the waypoint and does not teleport the player. Changes to the configuration take effect after a server restart.
+With `teleport-enabled: false`, `/wf tp <name>` only prints the coordinates of the waypoint and does not teleport the player. Changes to the configuration take effect after a server restart.
 
 Waypoints are saved in `plugins/Wayfinder/waypoints.yml`.
 

@@ -13,9 +13,9 @@ public final class WayfinderPlugin extends JavaPlugin {
         store = new WaypointStore(this);
         store.load();
 
-        PluginCommand command = getCommand("wayfinder");
+        PluginCommand command = getCommand("wf");
         if (command == null) {
-            getLogger().severe("Command 'wayfinder' is missing from plugin.yml");
+            getLogger().severe("Command 'wf' is missing from plugin.yml");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
