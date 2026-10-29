@@ -10,7 +10,7 @@ commands:
   wf:
     description: Manage your personal waypoints
     aliases: [wayfinder]
-    usage: /wf <set|tp|list|delete> [name]
+    usage: /wf <set|tp|list|delete|tpa|accept|deny> [name|player]
     permission: wayfinder.use
 
 permissions:
@@ -25,4 +25,10 @@ permissions:
     default: true
   wayfinder.delete:
     description: Delete waypoints
+    default: true
+  wayfinder.tpa:
+    description: Send teleport requests to other players
+    default: true
+  wayfinder.tpa.accept:
+    description: Accept or deny teleport requests
     default: true

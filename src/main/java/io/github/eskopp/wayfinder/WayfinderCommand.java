@@ -1,7 +1,9 @@
 package io.github.eskopp.wayfinder;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,19 +13,22 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 public final class WayfinderCommand implements CommandExecutor, TabCompleter {
 
     private static final Pattern VALID_NAME = Pattern.compile("[a-z0-9_-]{1,32}");
-    private static final List<String> SUBCOMMANDS = List.of("set", "tp", "list", "delete");
+    private static final List<String> SUBCOMMANDS = List.of("set", "tp", "list", "delete", "tpa", "accept", "deny");
 
     private final WayfinderPlugin plugin;
     private final WaypointStore store;
+    private final TpaRequests requests;
 
-    public WayfinderCommand(WayfinderPlugin plugin, WaypointStore store) {
+    public WayfinderCommand(WayfinderPlugin plugin, WaypointStore store, TpaRequests requests) {
         this.plugin = plugin;
         this.store = store;
+        this.requests = requests;
     }
 
     @Override
@@ -41,6 +46,9 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
             case "tp" -> handleTeleport(player, args);
             case "list" -> handleList(player);
             case "delete" -> handleDelete(player, args);
+            case "tpa" -> handleTpa(player, args);
+            case "accept" -> handleAccept(player);
+            case "deny" -> handleDeny(player);
             default -> {
                 return false;
             }
@@ -127,6 +135,77 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private void handleTpa(Player player, String[] args) {
+        if (!plugin.getConfig().getBoolean("tpa-enabled", true)) {
+            error(player, "Teleport requests are disabled on this server.");
+            return;
+        }
+        if (!player.hasPermission("wayfinder.tpa")) {
+            error(player, "You are not allowed to send teleport requests.");
+            return;
+        }
+        if (args.length < 2) {
+            error(player, "Usage: /wf tpa <player>");
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            error(player, "Player '" + args[1] + "' is not online.");
+            return;
+        }
+        if (target.getUniqueId().equals(player.getUniqueId())) {
+            error(player, "You cannot send a request to yourself.");
+            return;
+        }
+        int seconds = plugin.getConfig().getInt("tpa-timeout-seconds", 30);
+        requests.create(player.getUniqueId(), target.getUniqueId(), seconds * 1000L);
+        info(player, "Request sent to " + target.getName() + ". It expires in " + seconds + " seconds.");
+        target.sendMessage(Component.text(player.getName() + " wants to teleport to you. ", NamedTextColor.YELLOW)
+                .append(Component.text("[Accept]", NamedTextColor.GREEN)
+                        .clickEvent(ClickEvent.runCommand("/wf accept")))
+                .append(Component.text(" ", NamedTextColor.GRAY))
+                .append(Component.text("[Deny]", NamedTextColor.RED)
+                        .clickEvent(ClickEvent.runCommand("/wf deny"))));
+    }
+
+    private void handleAccept(Player player) {
+        if (!player.hasPermission("wayfinder.tpa.accept")) {
+            error(player, "You are not allowed to accept teleport requests.");
+            return;
+        }
+        UUID requesterId = requests.take(player.getUniqueId()).orElse(null);
+        if (requesterId == null) {
+            error(player, "You have no pending teleport request.");
+            return;
+        }
+        Player requester = Bukkit.getPlayer(requesterId);
+        if (requester == null) {
+            error(player, "The player who asked is no longer online.");
+            return;
+        }
+        requester.teleportAsync(player.getLocation()).thenAccept(ok -> {
+            if (ok) {
+                info(requester, "Teleported to " + player.getName() + ".");
+                info(player, requester.getName() + " teleported to you.");
+            } else {
+                error(requester, "Teleport was cancelled.");
+            }
+        });
+    }
+
+    private void handleDeny(Player player) {
+        UUID requesterId = requests.take(player.getUniqueId()).orElse(null);
+        if (requesterId == null) {
+            error(player, "You have no pending teleport request.");
+            return;
+        }
+        info(player, "Request denied.");
+        Player requester = Bukkit.getPlayer(requesterId);
+        if (requester != null) {
+            error(requester, player.getName() + " denied your teleport request.");
+        }
+    }
+
     private String requireName(Player player, String[] args) {
         if (args.length < 2) {
             error(player, "Usage: /wf " + args[0].toLowerCase(Locale.ROOT) + " <name>");
@@ -160,6 +239,14 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2 && List.of("tp", "delete").contains(args[0].toLowerCase(Locale.ROOT))) {
             String prefix = args[1].toLowerCase(Locale.ROOT);
             return store.names(player.getUniqueId()).stream().filter(n -> n.startsWith(prefix)).toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("tpa")) {
+            String prefix = args[1].toLowerCase(Locale.ROOT);
+            return Bukkit.getOnlinePlayers().stream()
+                    .filter(p -> !p.getUniqueId().equals(player.getUniqueId()))
+                    .map(Player::getName)
+                    .filter(n -> n.toLowerCase(Locale.ROOT).startsWith(prefix))
+                    .toList();
         }
         return List.of();
     }

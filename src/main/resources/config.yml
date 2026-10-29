@@ -1,2 +1,4 @@
 max-waypoints: 10
 teleport-enabled: true
+tpa-enabled: true
+tpa-timeout-seconds: 30
