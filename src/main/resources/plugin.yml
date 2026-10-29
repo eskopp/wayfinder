@@ -34,7 +34,7 @@ permissions:
     default: true
   wayfinder.tp.coords:
     description: Teleport to arbitrary coordinates
-    default: op
+    default: true
   wayfinder.tpa.accept:
     description: Accept or deny teleport requests
     default: true

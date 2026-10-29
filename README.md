@@ -10,7 +10,7 @@ A small Paper plugin for Minecraft 26.3. Players save personal waypoints and tel
 | `/wf tp <name>` | Teleport to one of your waypoints |
 | `/wf list` | List your waypoints |
 | `/wf delete <name>` | Delete a waypoint |
-| `/wf tp <x> <y> <z> [world]` | Teleport to coordinates (needs `wayfinder.tp.coords`, operators only by default) |
+| `/wf tp <x> <y> <z> [world]` | Teleport to coordinates (needs `wayfinder.tp.coords`) |
 | `/wf tpa <player>` | Ask to teleport to another online player |
 | `/wf tpahere <player>` | Ask another online player to teleport to you |
 | `/wf accept` | Accept the pending request. For `tpa` the sender is teleported to you, for `tpahere` you are teleported to the sender |
@@ -29,7 +29,7 @@ The command is `/wf`, with `/wayfinder` as a longer alias. The plugin registers 
 | `wayfinder.set` | everyone | Create waypoints |
 | `wayfinder.tp` | everyone | Teleport to waypoints |
 | `wayfinder.delete` | everyone | Delete waypoints |
-| `wayfinder.tp.coords` | operators | Teleport to coordinates |
+| `wayfinder.tp.coords` | everyone | Teleport to coordinates |
 | `wayfinder.tpa` | everyone | Ask to teleport to a player |
 | `wayfinder.tpahere` | everyone | Ask a player to teleport to you |
 | `wayfinder.tpa.accept` | everyone | Accept or deny teleport requests |
