@@ -10,16 +10,21 @@ permissions:
 
 jobs:
   build:
+    name: Build and test (Java ${{ matrix.java }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ["25", "27"]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Set up Java 25
+      - name: Set up Java ${{ matrix.java }}
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "25"
+          java-version: ${{ matrix.java }}
           cache: gradle
 
       - name: Build and test
@@ -29,6 +34,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
+          name: test-reports-java-${{ matrix.java }}
           path: build/reports/tests/
           if-no-files-found: ignore

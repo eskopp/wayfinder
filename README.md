@@ -74,7 +74,7 @@ The plugin jar is written to `build/libs/`. Copy it to the `plugins` folder of a
 
 ## Continuous integration
 
-Every push to `main` and every pull request is built and tested by GitHub Actions.
+Every push to `main` and every pull request is built and tested by GitHub Actions on Java 25 and Java 27.
 
 ## Releases
 
