@@ -5,6 +5,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -13,13 +14,12 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 public final class WayfinderCommand implements CommandExecutor, TabCompleter {
 
     private static final Pattern VALID_NAME = Pattern.compile("[a-z0-9_-]{1,32}");
-    private static final List<String> SUBCOMMANDS = List.of("set", "tp", "list", "delete", "tpa", "accept", "deny", "help");
+    private static final List<String> SUBCOMMANDS = List.of("set", "tp", "list", "delete", "tpa", "tpahere", "accept", "deny", "help");
 
     private final WayfinderPlugin plugin;
     private final WaypointStore store;
@@ -47,7 +47,8 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
             case "tp" -> handleTeleport(player, args);
             case "list" -> handleList(player);
             case "delete" -> handleDelete(player, args);
-            case "tpa" -> handleTpa(player, args);
+            case "tpa" -> handleTpa(player, args, TpaRequests.Direction.TO_TARGET);
+            case "tpahere" -> handleTpa(player, args, TpaRequests.Direction.TO_REQUESTER);
             case "accept" -> handleAccept(player);
             case "deny" -> handleDeny(player);
             case "help" -> handleHelp(player);
@@ -78,6 +79,10 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
     }
 
     private void handleTeleport(Player player, String[] args) {
+        if (args.length >= 4) {
+            handleCoordinates(player, args);
+            return;
+        }
         if (!player.hasPermission("wayfinder.tp")) {
             error(player, "You are not allowed to teleport to waypoints.");
             return;
@@ -100,6 +105,53 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
         player.teleportAsync(target).thenAccept(ok -> {
             if (ok) {
                 info(player, "Teleported to '" + name + "'.");
+            } else {
+                error(player, "Teleport was cancelled.");
+            }
+        });
+    }
+
+    private void handleCoordinates(Player player, String[] args) {
+        if (!player.hasPermission("wayfinder.tp.coords")) {
+            error(player, "You are not allowed to teleport to coordinates.");
+            return;
+        }
+        double x;
+        double y;
+        double z;
+        try {
+            x = Double.parseDouble(args[1]);
+            y = Double.parseDouble(args[2]);
+            z = Double.parseDouble(args[3]);
+        } catch (NumberFormatException e) {
+            error(player, "Usage: /wf tp <x> <y> <z> [world]");
+            return;
+        }
+        if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)) {
+            error(player, "Invalid coordinates.");
+            return;
+        }
+        World world = player.getWorld();
+        if (args.length >= 5) {
+            world = Bukkit.getWorld(args[4]);
+            if (world == null) {
+                error(player, "Unknown world '" + args[4] + "'.");
+                return;
+            }
+        }
+        if (y < world.getMinHeight() || y > world.getMaxHeight()) {
+            error(player, "Y must be between " + world.getMinHeight() + " and " + world.getMaxHeight() + ".");
+            return;
+        }
+        Location target = new Location(world, x, y, z, player.getLocation().getYaw(), player.getLocation().getPitch());
+        if (!world.getWorldBorder().isInside(target)) {
+            error(player, "That position is outside the world border.");
+            return;
+        }
+        player.teleportAsync(target).thenAccept(ok -> {
+            if (ok) {
+                info(player, "Teleported to " + target.getWorld().getName() + " "
+                        + target.getBlockX() + " " + target.getBlockY() + " " + target.getBlockZ() + ".");
             } else {
                 error(player, "Teleport was cancelled.");
             }
@@ -137,17 +189,19 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    private void handleTpa(Player player, String[] args) {
+    private void handleTpa(Player player, String[] args, TpaRequests.Direction direction) {
+        boolean here = direction == TpaRequests.Direction.TO_REQUESTER;
+        String sub = here ? "tpahere" : "tpa";
         if (!plugin.getConfig().getBoolean("tpa-enabled", true)) {
             error(player, "Teleport requests are disabled on this server.");
             return;
         }
-        if (!player.hasPermission("wayfinder.tpa")) {
+        if (!player.hasPermission(here ? "wayfinder.tpahere" : "wayfinder.tpa")) {
             error(player, "You are not allowed to send teleport requests.");
             return;
         }
         if (args.length < 2) {
-            error(player, "Usage: /wf tpa <player>");
+            error(player, "Usage: /wf " + sub + " <player>");
             return;
         }
         Player target = Bukkit.getPlayerExact(args[1]);
@@ -160,9 +214,9 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
             return;
         }
         int seconds = plugin.getConfig().getInt("tpa-timeout-seconds", 30);
-        requests.create(player.getUniqueId(), target.getUniqueId(), seconds * 1000L);
+        requests.create(player.getUniqueId(), target.getUniqueId(), direction, seconds * 1000L);
         info(player, "Request sent to " + target.getName() + ". It expires in " + seconds + " seconds.");
-        target.sendMessage(Component.text(player.getName() + " wants to teleport to you. ", NamedTextColor.YELLOW)
+        target.sendMessage(Component.text(player.getName() + (here ? " wants you to teleport to them. " : " wants to teleport to you. "), NamedTextColor.YELLOW)
                 .append(Component.text("[Accept]", NamedTextColor.GREEN)
                         .clickEvent(ClickEvent.runCommand("/wf accept")))
                 .append(Component.text(" ", NamedTextColor.GRAY))
@@ -175,34 +229,36 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
             error(player, "You are not allowed to accept teleport requests.");
             return;
         }
-        UUID requesterId = requests.take(player.getUniqueId()).orElse(null);
-        if (requesterId == null) {
+        TpaRequests.Request request = requests.take(player.getUniqueId()).orElse(null);
+        if (request == null) {
             error(player, "You have no pending teleport request.");
             return;
         }
-        Player requester = Bukkit.getPlayer(requesterId);
+        Player requester = Bukkit.getPlayer(request.requester());
         if (requester == null) {
             error(player, "The player who asked is no longer online.");
             return;
         }
-        requester.teleportAsync(player.getLocation()).thenAccept(ok -> {
+        Player mover = request.direction() == TpaRequests.Direction.TO_TARGET ? requester : player;
+        Player destination = mover == requester ? player : requester;
+        mover.teleportAsync(destination.getLocation()).thenAccept(ok -> {
             if (ok) {
-                info(requester, "Teleported to " + player.getName() + ".");
-                info(player, requester.getName() + " teleported to you.");
+                info(mover, "Teleported to " + destination.getName() + ".");
+                info(destination, mover.getName() + " teleported to you.");
             } else {
-                error(requester, "Teleport was cancelled.");
+                error(mover, "Teleport was cancelled.");
             }
         });
     }
 
     private void handleDeny(Player player) {
-        UUID requesterId = requests.take(player.getUniqueId()).orElse(null);
-        if (requesterId == null) {
+        TpaRequests.Request request = requests.take(player.getUniqueId()).orElse(null);
+        if (request == null) {
             error(player, "You have no pending teleport request.");
             return;
         }
         info(player, "Request denied.");
-        Player requester = Bukkit.getPlayer(requesterId);
+        Player requester = Bukkit.getPlayer(request.requester());
         if (requester != null) {
             error(requester, player.getName() + " denied your teleport request.");
         }
@@ -215,10 +271,12 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(Component.text("Commands:", NamedTextColor.GOLD));
         helpLine(player, "wayfinder.set", "/wf set <name>", "Save your current position");
         helpLine(player, "wayfinder.tp", "/wf tp <name>", "Teleport to a waypoint");
+        helpLine(player, "wayfinder.tp.coords", "/wf tp <x> <y> <z> [world]", "Teleport to coordinates");
         helpLine(player, "wayfinder.use", "/wf list", "List your waypoints");
         helpLine(player, "wayfinder.delete", "/wf delete <name>", "Delete a waypoint");
         if (plugin.getConfig().getBoolean("tpa-enabled", true)) {
             helpLine(player, "wayfinder.tpa", "/wf tpa <player>", "Ask to teleport to a player");
+            helpLine(player, "wayfinder.tpahere", "/wf tpahere <player>", "Ask a player to teleport to you");
             helpLine(player, "wayfinder.tpa.accept", "/wf accept", "Accept a teleport request");
             helpLine(player, "wayfinder.tpa.accept", "/wf deny", "Deny a teleport request");
         }
@@ -268,13 +326,18 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
             String prefix = args[1].toLowerCase(Locale.ROOT);
             return store.names(player.getUniqueId()).stream().filter(n -> n.startsWith(prefix)).toList();
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("tpa")) {
+        if (args.length == 2 && (args[0].equalsIgnoreCase("tpa") || args[0].equalsIgnoreCase("tpahere"))) {
             String prefix = args[1].toLowerCase(Locale.ROOT);
             return Bukkit.getOnlinePlayers().stream()
                     .filter(p -> !p.getUniqueId().equals(player.getUniqueId()))
                     .map(Player::getName)
                     .filter(n -> n.toLowerCase(Locale.ROOT).startsWith(prefix))
                     .toList();
+        }
+        if (args.length == 5 && args[0].equalsIgnoreCase("tp") && player.hasPermission("wayfinder.tp.coords")) {
+            String prefix = args[4].toLowerCase(Locale.ROOT);
+            return Bukkit.getWorlds().stream().map(World::getName)
+                    .filter(n -> n.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
         }
         return List.of();
     }

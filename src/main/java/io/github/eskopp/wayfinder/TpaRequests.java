@@ -7,21 +7,26 @@ import java.util.UUID;
 
 public final class TpaRequests {
 
-    private record Request(UUID requester, long expiresAt) {
+    public enum Direction {
+        TO_TARGET,
+        TO_REQUESTER
+    }
+
+    public record Request(UUID requester, Direction direction, long expiresAt) {
     }
 
     private final Map<UUID, Request> pending = new HashMap<>();
 
-    public void create(UUID requester, UUID target, long timeoutMillis) {
-        pending.put(target, new Request(requester, System.currentTimeMillis() + timeoutMillis));
+    public void create(UUID requester, UUID target, Direction direction, long timeoutMillis) {
+        pending.put(target, new Request(requester, direction, System.currentTimeMillis() + timeoutMillis));
     }
 
-    public Optional<UUID> take(UUID target) {
+    public Optional<Request> take(UUID target) {
         Request request = pending.remove(target);
         if (request == null || request.expiresAt() < System.currentTimeMillis()) {
             return Optional.empty();
         }
-        return Optional.of(request.requester());
+        return Optional.of(request);
     }
 
     public void clear(UUID player) {
