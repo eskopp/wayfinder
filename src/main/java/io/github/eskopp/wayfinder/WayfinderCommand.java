@@ -209,7 +209,10 @@ public final class WayfinderCommand implements CommandExecutor, TabCompleter {
     }
 
     private void handleHelp(Player player) {
-        player.sendMessage(Component.text("Wayfinder commands:", NamedTextColor.GOLD));
+        player.sendMessage(Component.text("Wayfinder", NamedTextColor.GOLD));
+        player.sendMessage(Component.text("Save places as waypoints and teleport back to them at any time.", NamedTextColor.GRAY));
+        player.sendMessage(Component.text("You can also ask another player if you may teleport to them.", NamedTextColor.GRAY));
+        player.sendMessage(Component.text("Commands:", NamedTextColor.GOLD));
         helpLine(player, "wayfinder.set", "/wf set <name>", "Save your current position");
         helpLine(player, "wayfinder.tp", "/wf tp <name>", "Teleport to a waypoint");
         helpLine(player, "wayfinder.use", "/wf list", "List your waypoints");
