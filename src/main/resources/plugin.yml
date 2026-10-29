@@ -1,0 +1,27 @@
+name: Wayfinder
+version: ${version}
+main: io.github.eskopp.wayfinder.WayfinderPlugin
+api-version: "26.3"
+authors: [eskopp]
+description: Personal waypoints with teleportation
+website: https://github.com/eskopp/wayfinder
+
+commands:
+  wayfinder:
+    description: Manage your personal waypoints
+    usage: /wayfinder <set|tp|list|delete> [name]
+    permission: wayfinder.use
+
+permissions:
+  wayfinder.use:
+    description: Use the /wayfinder command
+    default: true
+  wayfinder.set:
+    description: Create waypoints
+    default: true
+  wayfinder.tp:
+    description: Teleport to waypoints
+    default: true
+  wayfinder.delete:
+    description: Delete waypoints
+    default: true
