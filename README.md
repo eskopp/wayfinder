@@ -2,6 +2,19 @@
 
 A small Paper plugin for Minecraft 26.3. Players save personal waypoints and teleport back to them.
 
+## Installation
+
+Requirements: a [Paper](https://papermc.io/) server running Minecraft 26.3 and Java 25.
+
+1. Download `Wayfinder-<version>.jar` from the [latest release](https://github.com/eskopp/wayfinder/releases/latest).
+2. Copy the jar into the `plugins` folder of your server.
+3. Restart the server. Do not use `/reload`, it is not supported.
+4. Check that the plugin is listed by `/plugins`, then run `/wf help` in the game.
+
+On first start the plugin creates `plugins/Wayfinder/config.yml`. Waypoints are stored in `plugins/Wayfinder/waypoints.yml`.
+
+To update, stop the server, replace the old jar with the new one and start the server again. Your configuration and waypoints are kept. If you run the server in Docker, the `plugins` folder is the one inside the mounted data directory.
+
 ## Commands
 
 | Command | Description |
