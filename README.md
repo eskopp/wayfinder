@@ -59,6 +59,10 @@ Requires Java 25.
 
 The plugin jar is written to `build/libs/`. Copy it to the `plugins` folder of a Paper 26.3 server.
 
+## Continuous integration
+
+Every push to `main` and every pull request is built and tested by GitHub Actions.
+
 ## Releases
 
 Publishing a GitHub release builds the plugin and attaches the jar to it. The jar version is taken from the release tag, so the tag `v0.2.0` produces `Wayfinder-0.2.0.jar`.
